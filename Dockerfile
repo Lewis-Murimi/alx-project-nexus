@@ -12,5 +12,7 @@ RUN pip install -r requirements.txt
 COPY . .
 
 RUN pip install gunicorn
+RUN pip install whitenoise
+RUN python manage.py collectstatic --noinput
 
 CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
