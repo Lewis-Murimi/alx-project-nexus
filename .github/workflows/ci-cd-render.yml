@@ -71,8 +71,9 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          docker build -t your-dockerhub-username/ecommerce-backend:latest .
-          docker push your-dockerhub-username/ecommerce-backend:latest
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/ecommerce-backend:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/ecommerce-backend:latest
+
 
   deploy:
     name: Deploy to Render
