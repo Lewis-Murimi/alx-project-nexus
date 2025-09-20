@@ -32,7 +32,8 @@ class ProductListCreateView(generics.ListCreateAPIView):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ["category__id", "price"]
     search_fields = ["name", "description"]
-    ordering_fields = ["price", "created_at"]
+    ordering_fields = ["price", "created_at", "name"]
+    ordering = ["name"]
 
     def get_permissions(self):
         if self.request.method == "POST":

@@ -1,9 +1,10 @@
 from rest_framework.response import Response
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, serializers
 from rest_framework.views import APIView
 
+from catalog.models import Product
 from .models import Cart, CartItem
-from .serializers import CartSerializer, CartItemSerializer
+from .serializers import CartSerializer, CartItemSerializer, AddCartItemSerializer
 
 
 # Create your views here.
@@ -17,7 +18,7 @@ class CartView(generics.RetrieveAPIView):
 
 
 class AddToCartView(generics.CreateAPIView):
-    serializer_class = CartItemSerializer
+    serializer_class = AddCartItemSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
@@ -25,12 +26,20 @@ class AddToCartView(generics.CreateAPIView):
         product_id = self.request.data.get("product_id")
         quantity = self.request.data.get("quantity", 1)
 
+        product = Product.objects.get(id=product_id)
+
+        # Validate stock
+        if product.stock < quantity:
+            raise serializers.ValidationError("Not enough stock available.")
+
         item, created = CartItem.objects.get_or_create(
-            cart=cart, product_id=product_id,
+            cart=cart, product=product,
             defaults={"quantity": quantity}
         )
         if not created:
-            item.quantity += int(quantity)
+            if product.stock < item.quantity + quantity:
+                raise serializers.ValidationError("Not enough stock available.")
+            item.quantity += quantity
             item.save()
         return item
 
