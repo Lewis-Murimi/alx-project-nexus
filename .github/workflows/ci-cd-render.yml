@@ -50,7 +50,7 @@ jobs:
           pip install pytest pytest-django
 
       - name: Run tests
-        run: pytest --ds=ecommerce_backend.settings --cov=.
+        run: pytest --ds=core.settings --cov=.
 
   docker_build:
     name: Build Docker Image
