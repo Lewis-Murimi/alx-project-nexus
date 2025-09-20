@@ -3,11 +3,13 @@ from rest_framework import generics, permissions, status, filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from cart.models import Cart
+from core.utils.cache_utils import cache_response, invalidate_cache
 from .models import Order, OrderItem
 from .serializers import OrderSerializer, OrderUpdateSerializer, CheckoutOrderSerializer
-from cart.models import Cart, CartItem
-from catalog.models import Product
+from .tasks import send_order_confirmation_email
 
+CACHE_TTL = 60 * 10  # 10 minutes
 
 class OrderListView(generics.ListAPIView):
     serializer_class = OrderSerializer
@@ -18,11 +20,11 @@ class OrderListView(generics.ListAPIView):
     search_fields = ["shipping_address", "items__product__name"]
     ordering = ["-created_at"]
 
+    @cache_response(timeout=CACHE_TTL, key_prefix="orders_list")
     def get_queryset(self):
         user = self.request.user
-        if user.is_staff:
-            return Order.objects.all()
-        return Order.objects.filter(user=user)
+        qs = Order.objects.select_related("user").prefetch_related("items__product")
+        return qs if user.is_staff else qs.filter(user=user)
 
 
 class CheckoutView(APIView):
@@ -65,6 +67,10 @@ class CheckoutView(APIView):
         order.total_price = total_price
         order.save()
 
+        invalidate_cache(f"orders_list_user_{request.user.id}")
+
+        send_order_confirmation_email.delay(order.id)
+
         # Clear cart
         cart.items.all().delete()
 
@@ -75,9 +81,11 @@ class OrderDetailView(generics.RetrieveAPIView):
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    @cache_response(timeout=CACHE_TTL, key_prefix="order_detail")
     def get_queryset(self):
-        # Only allow a user to view their own orders
-        return Order.objects.filter(user=self.request.user)
+        user = self.request.user
+        qs = Order.objects.select_related("user").prefetch_related("items__product")
+        return qs if user.is_staff else qs.filter(user=user)
 
 class UpdateOrderView(generics.UpdateAPIView):
     queryset = Order.objects.all()
@@ -92,7 +100,14 @@ class UpdateOrderView(generics.UpdateAPIView):
 
     def patch(self, request, *args, **kwargs):
         """Allow partial updates for pending orders"""
-        return self.partial_update(request, *args, **kwargs)
+        response = self.partial_update(request, *args, **kwargs)
+
+        # Invalidate caches
+        order_id = self.get_object().pk
+        invalidate_cache(f"order_detail_{order_id}", f"orders_list_user_{request.user.id}")
+
+        return response
+
 
 class CancelOrderView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -124,4 +139,31 @@ class CancelOrderView(APIView):
         order.status = "cancelled"
         order.save()
 
+        # Invalidate caches
+        invalidate_cache(f"order_detail_{order.pk}", f"orders_list_user_{request.user.id}")
+
         return Response({"detail": "Order cancelled successfully."}, status=status.HTTP_200_OK)
+
+
+class PayOrderView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            order = Order.objects.get(pk=pk, user=request.user)
+        except Order.DoesNotExist:
+            return Response({"detail": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if order.status != "pending":
+            return Response({"detail": "Only pending orders can be paid."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Here we would integrate a real payment gateway
+        # For simulation, we mark as paid
+        order.status = "paid"
+        order.payment_status = "paid"
+        order.save()
+
+        # Invalidate caches
+        invalidate_cache(f"order_detail_{order.pk}", f"orders_list_user_{request.user.id}")
+
+        return Response({"detail": "Payment successful."}, status=status.HTTP_200_OK)

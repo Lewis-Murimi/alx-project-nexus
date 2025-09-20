@@ -5,3 +5,5 @@ python-decouple
 djangorestframework-simplejwt
 django-filter
 requests
+celery
+redis
