@@ -5,4 +5,4 @@ exclude =
     __pycache__,
     manage.py,
     settings.py
-ignore = F401  # optional: ignore unused imports if you want
+ignore = F401
