@@ -1,5 +1,5 @@
-from rest_framework.response import Response
 from rest_framework import generics, permissions, status, serializers
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from catalog.models import Product
@@ -33,8 +33,7 @@ class AddToCartView(generics.CreateAPIView):
             raise serializers.ValidationError("Not enough stock available.")
 
         item, created = CartItem.objects.get_or_create(
-            cart=cart, product=product,
-            defaults={"quantity": quantity}
+            cart=cart, product=product, defaults={"quantity": quantity}
         )
         if not created:
             if product.stock < item.quantity + quantity:
@@ -55,10 +54,13 @@ class RemoveFromCartView(generics.DestroyAPIView):
     serializer_class = CartItemSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+
 class ClearCartView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def delete(self, request, *args, **kwargs):
         cart, _ = Cart.objects.get_or_create(user=request.user)
         cart.items.all().delete()
-        return Response({"detail": "Cart cleared successfully."}, status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"detail": "Cart cleared successfully."}, status=status.HTTP_204_NO_CONTENT
+        )

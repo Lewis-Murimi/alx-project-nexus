@@ -1,5 +1,7 @@
-from django.core.cache import cache
 from functools import wraps
+
+from django.core.cache import cache
+
 
 def cache_response(timeout=300, key_prefix=None):
     """
@@ -8,10 +10,11 @@ def cache_response(timeout=300, key_prefix=None):
     :param timeout: cache duration in seconds (default 5 min)
     :param key_prefix: optional prefix for the cache key
     """
+
     def decorator(func):
         @wraps(func)
         def wrapper(view_instance, *args, **kwargs):
-            user = getattr(view_instance.request, 'user', None)
+            user = getattr(view_instance.request, "user", None)
             # Build cache key: user-based for list views, pk-based for detail views
             key_parts = [key_prefix or func.__name__]
             if user and user.is_authenticated:
@@ -32,7 +35,9 @@ def cache_response(timeout=300, key_prefix=None):
             return result
 
         return wrapper
+
     return decorator
+
 
 def invalidate_cache(*keys):
     """

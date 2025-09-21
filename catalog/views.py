@@ -1,11 +1,12 @@
-from rest_framework import generics, permissions, filters
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import generics, permissions, filters
 
 from core.utils.cache_utils import cache_response, invalidate_cache
 from .models import Category, Product
 from .serializers import CategorySerializer, ProductSerializer
 
 CACHE_TTL = 60 * 10  # 10 minutes
+
 
 # Category Views
 class CategoryListCreateView(generics.ListCreateAPIView):
@@ -32,7 +33,11 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
 class ProductListCreateView(generics.ListCreateAPIView):
     queryset = Product.objects.all().order_by("-created_at")
     serializer_class = ProductSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
     filterset_fields = ["category__id", "price"]
     search_fields = ["name", "description"]
     ordering_fields = ["price", "created_at", "name"]

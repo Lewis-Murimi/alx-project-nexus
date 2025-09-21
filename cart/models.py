@@ -1,10 +1,14 @@
-from django.db import models
 from django.conf import settings
+from django.db import models
+
 from catalog.models import Product
+
 
 # Create your models here.
 class Cart(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="cart")
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="cart"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

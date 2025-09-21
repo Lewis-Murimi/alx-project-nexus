@@ -1,9 +1,10 @@
-from django.db import models
-from django.db import models
 from django.conf import settings
+from django.db import models
+
 from catalog.models import Product
 
 User = settings.AUTH_USER_MODEL
+
 
 # Create your models here.
 class Order(models.Model):
@@ -19,8 +20,12 @@ class Order(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     shipping_address = models.TextField(blank=True)
-    payment_method = models.CharField(max_length=50,blank=True)
-    payment_status = models.CharField(max_length=20, choices=[("pending","Pending"),("paid","Paid")], default="pending")
+    payment_method = models.CharField(max_length=50, blank=True)
+    payment_status = models.CharField(
+        max_length=20,
+        choices=[("pending", "Pending"), ("paid", "Paid")],
+        default="pending",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -36,4 +41,3 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
-

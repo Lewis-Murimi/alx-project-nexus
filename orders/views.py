@@ -11,10 +11,15 @@ from .tasks import send_order_confirmation_email
 
 CACHE_TTL = 60 * 10  # 10 minutes
 
+
 class OrderListView(generics.ListAPIView):
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
+    ]
     filterset_fields = ["status", "payment_method"]
     ordering_fields = ["created_at", "total_price"]
     search_fields = ["shipping_address", "items__product__name"]
@@ -33,7 +38,9 @@ class CheckoutView(APIView):
     def post(self, request):
         cart, created = Cart.objects.get_or_create(user=request.user)
         if not cart.items.exists():
-            return Response({"detail": "Cart is empty."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Cart is empty."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         serializer = CheckoutOrderSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -77,6 +84,7 @@ class CheckoutView(APIView):
         serializer = OrderSerializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+
 class OrderDetailView(generics.RetrieveAPIView):
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -86,6 +94,7 @@ class OrderDetailView(generics.RetrieveAPIView):
         user = self.request.user
         qs = Order.objects.select_related("user").prefetch_related("items__product")
         return qs if user.is_staff else qs.filter(user=user)
+
 
 class UpdateOrderView(generics.UpdateAPIView):
     queryset = Order.objects.all()
@@ -104,7 +113,9 @@ class UpdateOrderView(generics.UpdateAPIView):
 
         # Invalidate caches
         order_id = self.get_object().pk
-        invalidate_cache(f"order_detail_{order_id}", f"orders_list_user_{request.user.id}")
+        invalidate_cache(
+            f"order_detail_{order_id}", f"orders_list_user_{request.user.id}"
+        )
 
         return response
 
@@ -119,15 +130,20 @@ class CancelOrderView(APIView):
             else:
                 order = Order.objects.get(pk=pk, user=request.user)
         except Order.DoesNotExist:
-            return Response({"detail": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "Order not found."}, status=status.HTTP_404_NOT_FOUND
+            )
 
         if order.status == "cancelled":
-            return Response({"detail": "Order already cancelled."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Order already cancelled."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if order.status != "pending":
             return Response(
                 {"detail": "Only pending orders can be cancelled."},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # restore stock
@@ -140,9 +156,13 @@ class CancelOrderView(APIView):
         order.save()
 
         # Invalidate caches
-        invalidate_cache(f"order_detail_{order.pk}", f"orders_list_user_{request.user.id}")
+        invalidate_cache(
+            f"order_detail_{order.pk}", f"orders_list_user_{request.user.id}"
+        )
 
-        return Response({"detail": "Order cancelled successfully."}, status=status.HTTP_200_OK)
+        return Response(
+            {"detail": "Order cancelled successfully."}, status=status.HTTP_200_OK
+        )
 
 
 class PayOrderView(APIView):
@@ -152,10 +172,15 @@ class PayOrderView(APIView):
         try:
             order = Order.objects.get(pk=pk, user=request.user)
         except Order.DoesNotExist:
-            return Response({"detail": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "Order not found."}, status=status.HTTP_404_NOT_FOUND
+            )
 
         if order.status != "pending":
-            return Response({"detail": "Only pending orders can be paid."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Only pending orders can be paid."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Here we would integrate a real payment gateway
         # For simulation, we mark as paid
@@ -164,6 +189,8 @@ class PayOrderView(APIView):
         order.save()
 
         # Invalidate caches
-        invalidate_cache(f"order_detail_{order.pk}", f"orders_list_user_{request.user.id}")
+        invalidate_cache(
+            f"order_detail_{order.pk}", f"orders_list_user_{request.user.id}"
+        )
 
         return Response({"detail": "Payment successful."}, status=status.HTTP_200_OK)
