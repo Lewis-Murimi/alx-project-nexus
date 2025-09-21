@@ -22,7 +22,7 @@ RUN pip install --upgrade pip \
 # Copy project source code
 COPY . .
 
-# Collect static files (if using Django staticfiles)
+# Collect static files
 RUN python manage.py collectstatic --noinput
 
 # ---------- Production Stage ----------
@@ -33,13 +33,13 @@ WORKDIR /app
 # Install runtime dependencies only
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
-    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy installed dependencies from builder
+# Copy installed Python packages and project code from builder
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /app /app
 
-# Expose the port your app runs on
+# Expose the port the app runs on
 EXPOSE 8000
 
 # Use a non-root user for security
