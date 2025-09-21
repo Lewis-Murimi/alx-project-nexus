@@ -68,7 +68,7 @@ ROOT_URLCONF = "core.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -150,6 +150,11 @@ CACHE_TTL = 60 * 15  # 15 minutes
 
 # Email configuration
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = config("GMAIL_EMAIL")
+EMAIL_HOST_PASSWORD = config("GMAIL_PASSWORD")
 DEFAULT_FROM_EMAIL = "noreply@ecommerce.com"
 
 # Celery Configuration

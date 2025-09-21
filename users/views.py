@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.core.mail import send_mail
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework import generics, permissions, status
@@ -14,6 +13,7 @@ from .serializers import (
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
 )
+from .tasks import send_password_reset_email
 
 User = get_user_model()
 
@@ -76,22 +76,27 @@ class PasswordResetRequestView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data["email"]
-        user = User.objects.get(email=email)
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "No user found with this email."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         token_generator = PasswordResetTokenGenerator()
         token = token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
 
+        domain = request.get_host()
+        protocol = "https" if request.is_secure() else "http"
         reset_link = (
-            f"http://localhost:8000/reset-password-confirm/?uid={uid}&token={token}"
+            f"{protocol}://{domain}/reset-password-confirm/?uid={uid}&token={token}"
         )
 
-        # Send reset link via email (console for now)
-        send_mail(
-            subject="Password Reset Request",
-            message=f"Click the link to reset your password: {reset_link}",
-            from_email=None,
-            recipient_list=[email],
+        # Send email asynchronously using Celery
+        send_password_reset_email.delay(
+            user_email=user.email, reset_link=reset_link, full_name=user.get_full_name()
         )
 
         return Response(

@@ -36,6 +36,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && pip install --no-cache-dir gunicorn whitenoise \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy requirements and install all Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
 # Copy installed Python packages and project code from builder
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /app /app

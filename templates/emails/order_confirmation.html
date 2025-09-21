@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Order Confirmation</title>
+</head>
+<body>
+<h2>Hi {{ order.user.first_name }} {{ order.user.last_name }},</h2>
+<p>Your order <strong>#{{ order.id }}</strong> totaling <strong>${{ order.total_price }}</strong> has been placed
+    successfully!</p>
+<p>Thank you for shopping with us.</p>
+</body>
+</html>
