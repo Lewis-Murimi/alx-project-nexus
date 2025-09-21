@@ -26,7 +26,7 @@ password = config("DJANGO_SUPERUSER_PASSWORD", default="Password@123")
 
 if not User.objects.filter(email=email).exists():
     User.objects.create_superuser(
-        email=email, 
+        email=email,
         password=password,
         first_name=first_name,
         last_name=last_name,
