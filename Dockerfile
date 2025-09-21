@@ -33,6 +33,7 @@ WORKDIR /app
 # Install runtime dependencies only
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
+    && pip install --no-cache-dir gunicorn whitenoise \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy installed Python packages and project code from builder
