@@ -42,6 +42,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /app /app
 
+# Create staticfiles dir and give access
+RUN mkdir -p /app/staticfiles && chown -R appuser:appuser /app/staticfiles
+
 # Expose the port the app runs on
 EXPOSE 8000
 
