@@ -13,16 +13,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies in build stage
+# Copy requirements and install Python dependencies
 COPY requirements.txt .
 RUN pip install --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt \
     && pip install --no-cache-dir gunicorn whitenoise
 
-# Copy project code
+# Copy project source code
 COPY . .
 
-# Collect static files
+# Collect static files (if using Django staticfiles)
 RUN python manage.py collectstatic --noinput
 
 # ---------- Production Stage ----------
@@ -30,13 +30,17 @@ FROM python:3.11-slim AS production
 
 WORKDIR /app
 
-# Copy installed dependencies and collected static files from builder
+# Copy installed dependencies from builder
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /app /app
 
-# Expose the port the app runs on
+# Expose the port your app runs on
 EXPOSE 8000
 
-# Set entrypoint to handle migrations at container runtime
+# Use a non-root user for security
+RUN useradd -m appuser
+USER appuser
+
+# Entrypoint to run migrations before starting the server
 ENTRYPOINT ["sh", "-c"]
-CMD ["python manage.py migrate && gunicorn core.wsgi:application --bind 0.0.0.0:8000"]
+CMD ["python manage.py migrate --noinput && gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 3 --threads 2 --timeout 120"]

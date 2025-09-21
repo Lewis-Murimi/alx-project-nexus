@@ -48,6 +48,13 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
       - name: Install flake8
         run: pip install flake8
       - name: Run linter
@@ -63,8 +70,18 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
       - name: Install test dependencies
-        run: pip install pytest pytest-django
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-django
       - name: Run tests
         run: pytest --ds=core.settings --cov=.
 
