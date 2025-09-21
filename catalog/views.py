@@ -53,6 +53,7 @@ class ProductListCreateView(generics.ListCreateAPIView):
         return Product.objects.select_related("category").all().order_by("-created_at")
 
     def perform_create(self, serializer):
+        product = serializer.save()
         invalidate_cache("products_list")  # clear the cached list
 
 
