@@ -42,6 +42,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /app /app
 
+# Create a non-root user to run the application
+RUN useradd -m appuser
+
 # Create staticfiles dir and give access
 RUN mkdir -p /app/staticfiles && chown -R appuser:appuser /app/staticfiles
 
@@ -49,7 +52,6 @@ RUN mkdir -p /app/staticfiles && chown -R appuser:appuser /app/staticfiles
 EXPOSE 8000
 
 # Use a non-root user for security
-RUN useradd -m appuser
 USER appuser
 
 # Entrypoint to run migrations before starting the server
