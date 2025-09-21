@@ -22,8 +22,6 @@ RUN pip install --upgrade pip \
 # Copy project source code
 COPY . .
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
 
 # ---------- Production Stage ----------
 FROM python:3.11-slim AS production
@@ -53,4 +51,4 @@ USER appuser
 
 # Entrypoint to run migrations before starting the server
 ENTRYPOINT ["sh", "-c"]
-CMD ["python manage.py migrate --noinput && gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 3 --threads 2 --timeout 120"]
+CMD ["python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 3 --threads 2 --timeout 120"]
