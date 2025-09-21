@@ -158,8 +158,8 @@ EMAIL_HOST_PASSWORD = config("GMAIL_PASSWORD")
 DEFAULT_FROM_EMAIL = "noreply@ecommerce.com"
 
 # Celery Configuration
-CELERY_BROKER_URL = "redis://redis:6379/0"  # Redis container
-CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+CELERY_BROKER_URL = config("REDIS_URL")
+CELERY_RESULT_BACKEND = config("REDIS_URL")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
