@@ -44,6 +44,8 @@ schema_view.security_definitions = {
     }
 }
 
+schema_view.security = [{"Bearer": []}]
+
 urlpatterns = [
     re_path(
         r"^swagger(?P<format>\.json|\.yaml)$",

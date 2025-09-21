@@ -138,7 +138,7 @@ SIMPLE_JWT = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://redis:6379/1",  # Use service name in Docker
+        "LOCATION": config("REDIS_URL"),  # Use service name in Docker
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
