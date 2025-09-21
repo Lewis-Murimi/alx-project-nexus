@@ -16,6 +16,7 @@ Including another URLconf
 """
 
 from django.contrib import admin
+from django.shortcuts import redirect
 from django.urls import path, include, re_path
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
@@ -26,13 +27,22 @@ schema_view = get_schema_view(
         title="Ecommerce API",
         default_version="v1",
         description="API documentation for Ecommerce backend",
-        terms_of_service="https://www.example.com/terms/",
-        contact=openapi.Contact(email="support@example.com"),
+        # terms_of_service="https://www.example.com/terms/",
+        # contact=openapi.Contact(email="support@example.com"),
         license=openapi.License(name="MIT License"),
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
+
+schema_view.security_definitions = {
+    "Bearer": {
+        "type": "apiKey",
+        "name": "Authorization",
+        "in": "header",
+        "description": 'JWT Authorization header using the Bearer scheme. Example: "Authorization: Bearer <token>"',
+    }
+}
 
 urlpatterns = [
     re_path(
@@ -45,11 +55,7 @@ urlpatterns = [
         schema_view.with_ui("swagger", cache_timeout=0),
         name="schema-swagger-ui",
     ),
-    path(
-        "/",
-        schema_view.with_ui("swagger", cache_timeout=0),
-        name="schema-swagger-ui",
-    ),
+    path("", lambda request: redirect("/swagger/")),
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
     path("admin/", admin.site.urls),
     path("api/users/", include("users.urls")),
