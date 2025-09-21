@@ -33,19 +33,7 @@ schema_view = get_schema_view(
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
-    authentication_classes=[],
 )
-
-schema_view.security_definitions = {
-    "Bearer": {
-        "type": "apiKey",
-        "name": "Authorization",
-        "in": "header",
-        "description": 'JWT Authorization header using the Bearer scheme. Example: "Authorization: Bearer <token>"',
-    }
-}
-
-schema_view.security = [{"Bearer": []}]
 
 urlpatterns = [
     re_path(

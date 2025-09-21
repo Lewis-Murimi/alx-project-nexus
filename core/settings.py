@@ -145,6 +145,18 @@ CACHES = {
     }
 }
 
+SWAGGER_SETTINGS = {
+    "SECURITY_DEFINITIONS": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "JWT Authorization header using the Bearer scheme. Example: 'Authorization: Bearer <token>'",
+        }
+    },
+    "USE_SESSION_AUTH": False,  # 🚫 removes Basic Auth option
+}
+
 # Optional: Set a default timeout for cache entries (seconds)
 CACHE_TTL = 60 * 15  # 15 minutes
 
