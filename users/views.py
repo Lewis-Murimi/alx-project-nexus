@@ -1,3 +1,4 @@
+from celery import current_app as celery_app
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
@@ -95,9 +96,24 @@ class PasswordResetRequestView(generics.GenericAPIView):
         )
 
         # Send email asynchronously using Celery
-        send_password_reset_email.delay(
-            user_email=user.email, reset_link=reset_link, full_name=user.get_full_name()
-        )
+        try:
+            if celery_app.conf.broker_url:
+                send_password_reset_email.delay(
+                    user_email=user.email,
+                    reset_link=reset_link,
+                    full_name=user.get_full_name(),
+                )
+            else:
+                send_password_reset_email(
+                    user_email=user.email,
+                    reset_link=reset_link,
+                    full_name=user.get_full_name(),
+                )
+        except Exception as e:
+            return Response(
+                {"detail": f"Failed to send email: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         return Response(
             {"detail": "Password reset link sent to email."},

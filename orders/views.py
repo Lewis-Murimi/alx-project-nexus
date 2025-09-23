@@ -1,3 +1,4 @@
+from celery import current_app as celery_app
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, permissions, status, filters
@@ -81,8 +82,14 @@ class CheckoutView(APIView):
 
         invalidate_cache(f"orders_list_user_{request.user.id}")
 
-        send_order_confirmation_email.delay(order.id)
-
+        try:
+            if celery_app.conf.broker_url:  # worker available
+                send_order_confirmation_email.delay(order.id)
+            else:  # fallback
+                send_order_confirmation_email(order.id)
+        except Exception:
+            # safety net if broker unreachable
+            send_order_confirmation_email(order.id)
         # Clear cart
         cart.items.all().delete()
 
@@ -96,6 +103,10 @@ class OrderDetailView(generics.RetrieveAPIView):
 
     @cache_response(timeout=CACHE_TTL, key_prefix="order_detail")
     def get_queryset(self):
+        # short-circuit for swagger schema generation
+        if getattr(self, "swagger_fake_view", False):
+            return Order.objects.none()
+
         user = self.request.user
         qs = Order.objects.select_related("user").prefetch_related("items__product")
         return qs if user.is_staff else qs.filter(user=user)
@@ -107,6 +118,10 @@ class UpdateOrderView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        # short-circuit for swagger schema generation
+        if getattr(self, "swagger_fake_view", False):
+            return Order.objects.none()
+
         user = self.request.user
         if user.is_staff:
             return Order.objects.all()

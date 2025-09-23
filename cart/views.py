@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -26,7 +27,7 @@ class AddToCartView(generics.CreateAPIView):
         product_id = self.request.data.get("product_id")
         quantity = self.request.data.get("quantity", 1)
 
-        product = Product.objects.get(id=product_id)
+        product = get_object_or_404(Product, id=product_id)
 
         # Validate stock
         if product.stock < quantity:
